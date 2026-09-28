@@ -1603,7 +1603,17 @@ namespace gamescope
             // The x/y here does nothing? Why? What is it for...
             // Use the subsurface set_position thing instead.
             if ( m_pFrame && m_bUnmappedAwaitingConfigure )
-                return;
+            {
+                // An unmapped xdg_surface must be configured again before a buffer may be attached,
+                // so commit with none to redo the initial commit and solicit that configure.
+                // Compositors that reset their configure state on unmap answer within a roundtrip;
+                // ones that never reset it (Hyprland) send nothing, and accept the attach untouched.
+                wl_surface_commit( m_pSurface );
+                wl_display_roundtrip( m_pBackend->GetDisplay() );
+                wl_display_roundtrip( m_pBackend->GetDisplay() );
+
+                m_bUnmappedAwaitingConfigure = false;
+            }
 
             m_bHasAttachedBuffer = true;
 
